@@ -7,7 +7,7 @@
 // directory itself. The output directory can be overridden with
 // MAKEFUN_OUTPUT_DIR for local testing; it defaults to /output when the
 // variable is unset or empty.
-import { chmodSync, mkdirSync, writeFileSync } from "node:fs";
+import { chmodSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 const ENTRY =
@@ -39,6 +39,12 @@ function main(): void {
   writeFileSync(OUT_PATH, ENTRY, { encoding: "utf8" });
   // The file must be readable by the different uid that reads /output.
   chmodSync(OUT_PATH, 0o644);
+  // Read back and verify: a partial write must fail loudly here, not
+  // silently ship a truncated monologue to the judge.
+  const written = readFileSync(OUT_PATH, { encoding: "utf8" });
+  if (written !== ENTRY) {
+    throw new Error("read-back mismatch: entry.txt differs from ENTRY");
+  }
 }
 
 main();
